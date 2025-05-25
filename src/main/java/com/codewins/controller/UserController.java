@@ -1,28 +1,35 @@
 package com.codewins.controller;
 
+import com.codewins.exception.UserException;
 import com.codewins.modal.Users;
 import com.codewins.repository.UserRepository;
+import com.codewins.service.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserRepository userRepository;
+//    @Autowired
+//    private UserRepository userRepository;
 
-    @PostMapping("/api/user")
-    public Users createUser(@RequestBody Users user) {
-        return userRepository.save(user);
-    }
-
+    private final UserService userService;
 
     @GetMapping("/api/users")
-    public List<Users> getUser() {
-        return userRepository.findAll();
+    public ResponseEntity<List<Users>> getUser() {
+        List<Users> users = userService.getAllUsers();
+        return new ResponseEntity<>(users,HttpStatus.OK);
+
+
         //        Users user = new Users();
         //        user.setFullName("Jack Bauer");
         //        user.setEmail("jack@codewins.com");
@@ -32,28 +39,29 @@ public class UserController {
         //        return user;
     }
 
+    @PostMapping("/api/user")
+    public ResponseEntity<Users> createUser(@RequestBody @Valid Users user) {
+        Users createUser = userService.createUser(user);
+        return new ResponseEntity<>(createUser, HttpStatus.CREATED);
+    }
+
     //    if augument userId pass then PathVariable pass ("userId)
     @GetMapping("/api/user/{id}")
-    public Users getUserById(@PathVariable Long id) throws Exception {
-        Optional<Users> user = userRepository.findById(id);
-        if (user.isPresent()) {
-            return user.get();
-        }
-        throw new Exception("User not found");
+    public ResponseEntity<Users> getUserById(@PathVariable Long id) throws Exception {
+            Users user = userService.getUserById(id);
+            return new ResponseEntity<>(user,HttpStatus.OK);
     }
 
 
     @PutMapping("/api/user/{id}")
-    public Users updateUser(@RequestBody Users users, @PathVariable Long id) throws Exception {
-        Optional<Users> user = userRepository.findById(id);
-        if (user.isEmpty()) {
-            throw new Exception("User not found" + id);
-        }
-        Users existingUser = user.get();
-        existingUser.setFullName(users.getFullName());
-        existingUser.setEmail(users.getEmail());
-        existingUser.setPhone(users.getPhone());
-        existingUser.setRole(users.getRole());
-        return userRepository.save(existingUser);
+    public ResponseEntity<Users> updateUser(@RequestBody Users users, @PathVariable Long id) throws Exception {
+        Users user = userService.updateUser(id,users);
+        return new ResponseEntity<>(user,HttpStatus.OK);
+    }
+
+    @DeleteMapping("/api/user/{id}")
+    public ResponseEntity<String> deleteUserNyId(@PathVariable Long id) throws Exception {
+        userService.deleteUserById(id);
+        return new ResponseEntity<>("User deleted",HttpStatus.ACCEPTED);
     }
 }
